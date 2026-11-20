@@ -302,20 +302,78 @@
 
     <!-- ==================== TAB 4: IT DASHBOARD MONITOR ==================== -->
     <section id="tab-it" class="hidden space-y-4">
-      <div class="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-5 shadow-sm">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="bg-gradient-to-r from-indigo-950 via-indigo-900 to-slate-800 text-white rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold">ศูนย์ติดตามความต้องการรายงาน IT (Dashboard Monitor Hub)</h2>
-            <p class="text-sm text-indigo-200 mt-0.5">
-              รวบรวมความต้องการดึงรายงานจาก HOSxP / FDH / E-Claim / STM / 43 แฟ้ม ของทุกกลุ่มงาน
+            <div class="flex items-center gap-2 flex-wrap">
+              <h2 class="text-lg sm:text-xl font-bold">IT Dashboard Monitor Hub (ศูนย์รายงานและดึงข้อมูล HOSxP)</h2>
+              <span id="it-hosxp-badge" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/15 text-indigo-100 border border-white/20">
+                HOSxP: ยังไม่ตั้งค่า
+              </span>
+            </div>
+            <p class="text-sm text-indigo-200 mt-1">
+              รวมรายงานความต้องการของทั้ง 11 กลุ่มงาน (HOSxP / FDH / E-Claim / STM / CSSD) พร้อมชุดคำสั่ง SQL, ตัวอย่างรายงาน, การรัน Query จริง และ Export CSV
             </p>
           </div>
-          <div class="flex gap-2">
-            <select id="it-filter-status" class="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none">
-              <option value="all" class="text-slate-900">ทุกสถานะ IT</option>
-              <option value="pending" class="text-slate-900">รอดำเนินการ</option>
-              <option value="in_progress" class="text-slate-900">กำลังพัฒนา</option>
-              <option value="ready" class="text-slate-900">พร้อมใช้งาน</option>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="openHosxpConfigModal()"
+              class="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-sm font-medium flex items-center gap-1.5 cursor-pointer">
+              <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+              ตั้งค่าเชื่อมต่อ HOSxP
+            </button>
+          </div>
+        </div>
+
+        <!-- IT Summary Counters -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/15 text-xs">
+          <div class="bg-white/10 rounded-xl px-3.5 py-2.5">
+            <div class="text-indigo-200">รายงานทั้งหมด</div>
+            <div id="it-sum-total" class="text-lg font-bold text-white mt-0.5">0</div>
+          </div>
+          <div class="bg-emerald-500/20 rounded-xl px-3.5 py-2.5 border border-emerald-400/20">
+            <div class="text-emerald-200">พร้อมใช้งาน</div>
+            <div id="it-sum-ready" class="text-lg font-bold text-emerald-300 mt-0.5">0</div>
+          </div>
+          <div class="bg-amber-500/20 rounded-xl px-3.5 py-2.5 border border-amber-400/20">
+            <div class="text-amber-200">กำลังพัฒนา</div>
+            <div id="it-sum-progress" class="text-lg font-bold text-amber-300 mt-0.5">0</div>
+          </div>
+          <div class="bg-rose-500/20 rounded-xl px-3.5 py-2.5 border border-rose-400/20">
+            <div class="text-rose-200">ความเร่งด่วนสูง</div>
+            <div id="it-sum-high" class="text-lg font-bold text-rose-200 mt-0.5">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- IT Filters -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 no-print">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <div class="lg:col-span-4">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหารหัส / ชื่อรายงาน / แหล่งข้อมูล</label>
+            <input id="it-filter-q" type="text" placeholder="เช่น IT-ER, ABI, AdjRW, DENY, Recormon..."
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div class="lg:col-span-3">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">กลุ่มงาน</label>
+            <select id="it-filter-dept" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">ทุกกลุ่มงาน</option>
+            </select>
+          </div>
+          <div class="lg:col-span-3">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">สถานะการพัฒนา</label>
+            <select id="it-filter-status" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">ทุกสถานะ</option>
+              <option value="pending">รอดำเนินการ</option>
+              <option value="in_progress">กำลังพัฒนา</option>
+              <option value="ready">พร้อมใช้งาน</option>
+            </select>
+          </div>
+          <div class="lg:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ความเร่งด่วน</label>
+            <select id="it-filter-priority" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="all">ทั้งหมด</option>
+              <option value="high">ด่วนมาก (High)</option>
+              <option value="medium">ปานกลาง (Medium)</option>
             </select>
           </div>
         </div>
@@ -502,6 +560,165 @@
           <button type="submit" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold cursor-pointer">บันทึกกิจกรรม</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ==================== IT REPORT RUNNER & SQL MODAL ==================== -->
+  <div id="it-report-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-indigo-950 text-white flex items-start justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span id="itr-code" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-indigo-500/30 text-indigo-200"></span>
+            <span id="itr-dept" class="text-xs text-indigo-200"></span>
+          </div>
+          <h3 id="itr-title" class="text-lg font-bold leading-snug"></h3>
+        </div>
+        <button onclick="closeItReportModal()" class="text-indigo-200 hover:text-white p-1 cursor-pointer">✕</button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2 bg-slate-50 rounded-xl p-4 border border-slate-200">
+            <div class="text-xs font-semibold text-slate-500 uppercase mb-1">ความต้องการจากกลุ่มงาน</div>
+            <p id="itr-desc" class="text-sm text-slate-700 whitespace-pre-line"></p>
+            <div class="mt-2 pt-2 border-t border-slate-200 flex flex-wrap gap-4 text-xs text-slate-600">
+              <span>แหล่งข้อมูล: <strong id="itr-source" class="text-indigo-700"></strong></span>
+              <span>ความถี่: <strong id="itr-freq"></strong></span>
+              <span>ผู้พัฒนา: <strong id="itr-assignee"></strong></span>
+            </div>
+          </div>
+          <div class="bg-indigo-50/60 rounded-xl p-4 border border-indigo-200 space-y-2 text-xs">
+            <div class="font-semibold text-indigo-800 uppercase">ช่วงวันที่ดึงรายงาน (HOSxP)</div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-slate-600 block mb-0.5">เริ่มต้น</label>
+                <input id="itr-start-date" type="date" value="2026-10-01" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white" />
+              </div>
+              <div>
+                <label class="text-slate-600 block mb-0.5">สิ้นสุด</label>
+                <input id="itr-end-date" type="date" value="2027-09-30" class="w-full px-2 py-1.5 rounded-lg border border-slate-300 bg-white" />
+              </div>
+            </div>
+            <div class="flex flex-col gap-1.5 pt-1">
+              <button onclick="runItReportQuery()" class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold cursor-pointer">
+                ▶ ดึงข้อมูลจริงจาก HOSxP
+              </button>
+              <div class="grid grid-cols-2 gap-1.5">
+                <button onclick="showItSampleData()" class="py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-medium cursor-pointer">
+                  ดูข้อมูลตัวอย่าง
+                </button>
+                <button onclick="exportItReportCsv()" class="py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-medium cursor-pointer">
+                  Export CSV
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SQL Query Block -->
+        <div class="rounded-xl border border-slate-200 overflow-hidden">
+          <div class="px-4 py-2 bg-slate-800 text-slate-200 flex items-center justify-between text-xs">
+            <span class="font-mono font-semibold">HOSxP SQL Query (Read-only SELECT)</span>
+            <div class="flex gap-2">
+              <button onclick="copyItSql()" class="px-2.5 py-1 rounded bg-slate-700 hover:bg-slate-600 text-white cursor-pointer">คัดลอก SQL</button>
+              <button id="itr-save-sql-btn" onclick="saveItReportMeta()" class="hidden px-2.5 py-1 rounded bg-teal-600 hover:bg-teal-500 text-white cursor-pointer">บันทึก SQL & สถานะ</button>
+            </div>
+          </div>
+          <textarea id="itr-sql" rows="6" class="w-full p-3 font-mono text-xs bg-slate-900 text-emerald-300 focus:outline-none"></textarea>
+        </div>
+
+        <!-- IT Dev Status Bar (Edit Mode) -->
+        <div id="itr-dev-controls" class="hidden bg-amber-50/70 rounded-xl p-3 border border-amber-200 grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">สถานะพัฒนา</label>
+            <select id="itr-edit-status" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+              <option value="pending">รอดำเนินการ</option>
+              <option value="in_progress">กำลังพัฒนา</option>
+              <option value="ready">พร้อมใช้งาน</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">ความเร่งด่วน</label>
+            <select id="itr-edit-priority" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white">
+              <option value="high">ด่วนมาก (High)</option>
+              <option value="medium">ปานกลาง (Medium)</option>
+              <option value="low">ปกติ (Low)</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">ผู้รับผิดชอบ IT</label>
+            <input id="itr-edit-assignee" type="text" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white" />
+          </div>
+          <div>
+            <label class="font-semibold text-slate-700 block mb-1">บันทึกเพิ่มเติม IT</label>
+            <input id="itr-edit-note" type="text" placeholder="หมายเหตุ..." class="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white" />
+          </div>
+        </div>
+
+        <!-- Result Table -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span id="itr-result-label" class="text-xs font-bold text-slate-700">ตัวอย่างโครงสร้างผลลัพธ์รายงาน</span>
+          </div>
+          <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-72">
+            <table class="w-full text-xs text-left">
+              <thead id="itr-result-thead" class="bg-slate-50 text-slate-600 border-b border-slate-200 sticky top-0"></thead>
+              <tbody id="itr-result-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button onclick="closeItReportModal()" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-slate-800 text-white hover:bg-slate-700 cursor-pointer">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== HOSXP CONFIG MODAL ==================== -->
+  <div id="hosxp-config-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <h3 class="text-base font-bold">ตั้งค่าเชื่อมต่อฐานข้อมูล HOSxP (MySQL)</h3>
+        <button onclick="closeHosxpConfigModal()" class="text-slate-300 hover:text-white cursor-pointer">✕</button>
+      </div>
+      <div class="p-6 space-y-3 text-sm">
+        <div class="grid grid-cols-3 gap-3">
+          <div class="col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Host / IP</label>
+            <input id="hosxp-host" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Port</label>
+            <input id="hosxp-port" type="number" value="3306" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Database Name</label>
+          <input id="hosxp-db" type="text" value="hos" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Username</label>
+            <input id="hosxp-user" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+            <input id="hosxp-pass" type="password" placeholder="(คงเดิมถ้าไม่เปลี่ยน)" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+        </div>
+        <div id="hosxp-test-result" class="hidden p-2.5 rounded-xl text-xs"></div>
+        <div class="pt-2 flex justify-between gap-2">
+          <button type="button" onclick="testHosxpConn()" class="px-3.5 py-2 rounded-xl border border-indigo-300 bg-indigo-50 text-indigo-700 font-semibold cursor-pointer">
+            ทดสอบเชื่อมต่อ
+          </button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeHosxpConfigModal()" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-600 cursor-pointer">ยกเลิก</button>
+            <button type="button" onclick="saveHosxpConn()" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold cursor-pointer">บันทึก</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

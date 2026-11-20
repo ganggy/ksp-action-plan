@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const mysql = require('mysql2/promise');
 const store = require('./lib/store');
 
 const app = express();
@@ -93,6 +94,97 @@ app.get('/api/roadmaps', (req, res) => {
     roadmaps: db.roadmaps,
     fiscalMonths: db.fiscalMonths
   });
+});
+
+// ==================== IT Dashboard Monitor Hub ====================
+app.get('/api/it-reports', (req, res) => {
+  const reports = store.listItReports(req.query);
+  res.json({ items: reports, total: reports.length });
+});
+
+app.patch('/api/it-reports/:id', (req, res) => {
+  const updated = store.updateItReport(req.params.id, req.body || {});
+  if (!updated) return res.status(404).json({ error: 'ไม่พบรายการรายงาน IT ที่ระบุ' });
+  res.json(updated);
+});
+
+app.get('/api/hosxp/config', (req, res) => {
+  res.json(store.getHosxpConfig());
+});
+
+app.put('/api/hosxp/config', (req, res) => {
+  const updated = store.updateHosxpConfig(req.body || {});
+  res.json(updated);
+});
+
+app.post('/api/hosxp/test', async (req, res) => {
+  const cfg = store.getRawHosxpConfig();
+  if (!cfg.host || !cfg.user) {
+    return res.status(400).json({ ok: false, error: 'กรุณาระบุ Host และ Username ของฐานข้อมูล HOSxP ก่อน' });
+  }
+  let conn;
+  try {
+    conn = await mysql.createConnection({
+      host: cfg.host,
+      port: Number(cfg.port || 3306),
+      user: cfg.user,
+      password: cfg.password || '',
+      database: cfg.database || 'hos',
+      connectTimeout: 5000
+    });
+    const [rows] = await conn.query('SELECT VERSION() AS version, DATABASE() AS db');
+    res.json({ ok: true, info: rows[0] });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  } finally {
+    if (conn) await conn.end().catch(() => {});
+  }
+});
+
+app.post('/api/it-reports/:id/run', async (req, res) => {
+  const report = store.getItReport(req.params.id);
+  if (!report) return res.status(404).json({ error: 'ไม่พบรายงาน IT ที่ระบุ' });
+
+  const sqlText = ((req.body && req.body.sqlQuery) || report.sqlQuery || '').trim();
+  const cleanSql = sqlText.replace(/^--.*$/gm, '').trim();
+  if (!/^select\b/i.test(cleanSql)) {
+    return res.status(400).json({ error: 'อนุญาตเฉพาะคำสั่ง SELECT แบบอ่านอย่างเดียวเท่านั้น' });
+  }
+
+  const cfg = store.getRawHosxpConfig();
+  if (!cfg.host || !cfg.user) {
+    return res.status(400).json({ error: 'ยังไม่ได้ตั้งค่าการเชื่อมต่อฐานข้อมูล HOSxP' });
+  }
+
+  const startDate = (req.body && req.body.startDate) || '2026-10-01';
+  const endDate = (req.body && req.body.endDate) || '2027-09-30';
+
+  let conn;
+  try {
+    conn = await mysql.createConnection({
+      host: cfg.host,
+      port: Number(cfg.port || 3306),
+      user: cfg.user,
+      password: cfg.password || '',
+      database: cfg.database || 'hos',
+      connectTimeout: 6000
+    });
+    const preparedSql = sqlText
+      .replace(/:start_date/g, conn.escape(startDate))
+      .replace(/:end_date/g, conn.escape(endDate));
+    const [rows, fields] = await conn.query(preparedSql);
+    const columns = fields ? fields.map((f) => f.name) : [];
+    res.json({
+      ok: true,
+      columns,
+      rows: Array.isArray(rows) ? rows.slice(0, 500) : [],
+      totalRows: Array.isArray(rows) ? rows.length : 0
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  } finally {
+    if (conn) await conn.end().catch(() => {});
+  }
 });
 
 // SPA fallback

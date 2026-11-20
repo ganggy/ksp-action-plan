@@ -2,6 +2,10 @@ let state = {
   dashboard: null,
   items: [],
   ppfs: [],
+  itReports: [],
+  hosxpConfig: null,
+  currentItReport: null,
+  currentItResult: { columns: [], rows: [] },
   roadmaps: null,
   fiscalMonths: [],
   editMode: sessionStorage.getItem('ksp_edit_mode') === 'true',
@@ -93,17 +97,21 @@ function switchTab(tabName) {
 // ==================== LOAD DATA ====================
 async function loadAll() {
   try {
-    const [dashboard, itemsRes, ppfsRes, roadmapRes] = await Promise.all([
+    const [dashboard, itemsRes, ppfsRes, roadmapRes, itRes, hosxpCfg] = await Promise.all([
       api('/api/dashboard'),
       api('/api/items'),
       api('/api/ppfs'),
-      api('/api/roadmaps')
+      api('/api/roadmaps'),
+      api('/api/it-reports'),
+      api('/api/hosxp/config')
     ]);
     state.dashboard = dashboard;
     state.items = itemsRes.items;
     state.ppfs = ppfsRes.items;
     state.roadmaps = roadmapRes.roadmaps;
     state.fiscalMonths = roadmapRes.fiscalMonths;
+    state.itReports = itRes.items || [];
+    state.hosxpConfig = hosxpCfg;
 
     populateSelects();
     renderAll();
@@ -115,15 +123,20 @@ async function loadAll() {
 function populateSelects() {
   const deptSel = document.getElementById('filter-dept');
   const newDeptSel = document.getElementById('new-dept');
+  const itDeptSel = document.getElementById('it-filter-dept');
   const currentDept = deptSel.value;
+  const currentItDept = itDeptSel.value;
 
   deptSel.innerHTML = '<option value="all">ทุกกลุ่มงาน (11 กลุ่มงาน)</option>';
+  itDeptSel.innerHTML = '<option value="all">ทุกกลุ่มงาน</option>';
   newDeptSel.innerHTML = '';
   for (const d of state.dashboard.departments) {
     deptSel.innerHTML += `<option value="${d.id}">${escapeHtml(d.name)}</option>`;
+    itDeptSel.innerHTML += `<option value="${d.id}">${escapeHtml(d.name)}</option>`;
     newDeptSel.innerHTML += `<option value="${d.id}">${escapeHtml(d.name)}</option>`;
   }
   if (currentDept) deptSel.value = currentDept;
+  if (currentItDept) itDeptSel.value = currentItDept;
 
   const ppfsCatSel = document.getElementById('ppfs-category');
   const currentCat = ppfsCatSel.value;
@@ -582,49 +595,97 @@ async function updatePpfsField(no, field, value) {
   }
 }
 
-// ==================== TAB 4: IT MONITOR ====================
+// ==================== TAB 4: IT DASHBOARD MONITOR HUB ====================
 function renderItMonitor() {
+  const reports = state.itReports || [];
+  const q = (document.getElementById('it-filter-q').value || '').trim().toLowerCase();
+  const dept = document.getElementById('it-filter-dept').value;
   const statusFilter = document.getElementById('it-filter-status').value;
-  const list = state.items.filter((i) => statusFilter === 'all' || i.itStatus === statusFilter);
+  const priorityFilter = document.getElementById('it-filter-priority').value;
+
+  // Update summary counters
+  document.getElementById('it-sum-total').textContent = reports.length;
+  document.getElementById('it-sum-ready').textContent = reports.filter((r) => r.status === 'ready').length;
+  document.getElementById('it-sum-progress').textContent = reports.filter((r) => r.status === 'in_progress').length;
+  document.getElementById('it-sum-high').textContent = reports.filter((r) => r.priority === 'high').length;
+
+  const badge = document.getElementById('it-hosxp-badge');
+  if (state.hosxpConfig && state.hosxpConfig.user) {
+    badge.textContent = `HOSxP: ${state.hosxpConfig.host}:${state.hosxpConfig.port}/${state.hosxpConfig.database}`;
+  } else {
+    badge.textContent = 'HOSxP: ยังไม่ตั้งค่า (โหมดตัวอย่าง)';
+  }
+
+  const list = reports.filter((r) => {
+    if (dept !== 'all' && r.departmentId !== dept) return false;
+    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
+    if (q) {
+      const hay = `${r.id} ${r.title} ${r.description} ${r.departmentName} ${r.source}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
   const container = document.getElementById('it-cards-list');
+  if (list.length === 0) {
+    container.innerHTML = '<div class="col-span-full bg-white rounded-2xl p-8 text-center text-slate-400 border border-slate-200">ไม่พบรายงาน IT ที่ตรงกับเงื่อนไข</div>';
+    return;
+  }
 
   const statusMeta = {
     pending: { label: 'รอดำเนินการ', cls: 'bg-slate-100 text-slate-700' },
     in_progress: { label: 'กำลังพัฒนา', cls: 'bg-amber-100 text-amber-800' },
     ready: { label: 'พร้อมใช้งาน', cls: 'bg-emerald-100 text-emerald-800' }
   };
+  const priorityMeta = {
+    high: { label: 'ด่วนมาก', cls: 'bg-rose-50 text-rose-700 border border-rose-200' },
+    medium: { label: 'ปานกลาง', cls: 'bg-sky-50 text-sky-700 border border-sky-200' },
+    low: { label: 'ปกติ', cls: 'bg-slate-50 text-slate-600 border border-slate-200' }
+  };
 
   container.innerHTML = list
-    .map((item) => {
-      const st = statusMeta[item.itStatus] || statusMeta.pending;
-      const controls = state.editMode
+    .map((r) => {
+      const st = statusMeta[r.status] || statusMeta.pending;
+      const pr = priorityMeta[r.priority] || priorityMeta.medium;
+      const quickBtns = state.editMode
         ? `
-          <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100">
-            <button onclick="setItStatus('${item.id}', 'pending')" class="px-2.5 py-1 rounded-lg text-xs border ${item.itStatus === 'pending' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'} cursor-pointer">รอทำ</button>
-            <button onclick="setItStatus('${item.id}', 'in_progress')" class="px-2.5 py-1 rounded-lg text-xs border ${item.itStatus === 'in_progress' ? 'bg-amber-500 text-white' : 'bg-white text-slate-600'} cursor-pointer">กำลังพัฒนา</button>
-            <button onclick="setItStatus('${item.id}', 'ready')" class="px-2.5 py-1 rounded-lg text-xs border ${item.itStatus === 'ready' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'} cursor-pointer">พร้อมใช้งาน</button>
+          <div class="flex gap-1.5">
+            <button onclick="setItStatus('${r.id}', 'pending')" class="px-2 py-1 rounded-lg text-[11px] border ${r.status === 'pending' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600'} cursor-pointer">รอทำ</button>
+            <button onclick="setItStatus('${r.id}', 'in_progress')" class="px-2 py-1 rounded-lg text-[11px] border ${r.status === 'in_progress' ? 'bg-amber-500 text-white' : 'bg-white text-slate-600'} cursor-pointer">กำลังทำ</button>
+            <button onclick="setItStatus('${r.id}', 'ready')" class="px-2 py-1 rounded-lg text-[11px] border ${r.status === 'ready' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'} cursor-pointer">พร้อมใช้</button>
           </div>
         `
         : '';
 
       return `
-        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 flex flex-col justify-between">
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 card-hover flex flex-col justify-between">
           <div>
-            <div class="flex items-center justify-between gap-2 mb-2">
-              <span class="text-xs font-semibold text-teal-700">${escapeHtml(item.departmentName)}</span>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${st.cls}">${st.label}</span>
+            <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(r.id)}</span>
+                <span class="text-xs font-semibold text-teal-700">${escapeHtml(r.departmentName)}</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-medium ${pr.cls}">${pr.label}</span>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${st.cls}">${st.label}</span>
+              </div>
             </div>
-            <h3 class="font-bold text-slate-900 text-sm">${escapeHtml(item.title)}</h3>
-            <div class="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-700 whitespace-pre-line">
-              ${escapeHtml(item.itMonitor)}
-            </div>
+            <h3 class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(r.title)}</h3>
+            <div class="mt-2 p-3 rounded-xl bg-slate-50 border border-slate-200/70 text-xs text-slate-700 whitespace-pre-line">${escapeHtml(r.description)}</div>
           </div>
-          <div>
-            <div class="mt-3 flex items-center justify-between text-xs text-slate-500">
-              <span>แหล่งข้อมูล: <strong class="text-indigo-700">${escapeHtml(item.itSource)}</strong></span>
-              <span>ผู้ขอรายงาน: ${escapeHtml(item.owner)}</span>
+          <div class="mt-3 pt-3 border-t border-slate-100 space-y-2.5">
+            <div class="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-1">
+              <span>แหล่งข้อมูล: <strong class="text-indigo-700">${escapeHtml(r.source)}</strong></span>
+              <span>ความถี่: <strong>${escapeHtml(r.frequency)}</strong></span>
             </div>
-            ${controls}
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <button onclick="openItReportModal('${r.id}')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                เปิดดูรายงาน & SQL
+              </button>
+              ${quickBtns}
+            </div>
           </div>
         </div>
       `;
@@ -632,13 +693,192 @@ function renderItMonitor() {
     .join('');
 }
 
-async function setItStatus(id, itStatus) {
+async function setItStatus(id, status) {
   try {
-    await api(`/api/items/${id}`, { method: 'PUT', body: JSON.stringify({ itStatus }) });
+    await api(`/api/it-reports/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
     await loadAll();
-    showToast('อัปเดตสถานะรายงาน IT แล้ว');
+    showToast(`อัปเดตสถานะ ${id} เรียบร้อย`);
   } catch (err) {
     showToast(err.message, true);
+  }
+}
+
+function openItReportModal(id) {
+  const r = state.itReports.find((x) => x.id === id);
+  if (!r) return;
+  state.currentItReport = r;
+
+  document.getElementById('itr-code').textContent = r.id;
+  document.getElementById('itr-dept').textContent = r.departmentName;
+  document.getElementById('itr-title').textContent = r.title;
+  document.getElementById('itr-desc').textContent = r.description;
+  document.getElementById('itr-source').textContent = r.source;
+  document.getElementById('itr-freq').textContent = r.frequency;
+  document.getElementById('itr-assignee').textContent = r.assignee || 'ทีม IT';
+  document.getElementById('itr-sql').value = r.sqlQuery || '';
+
+  document.getElementById('itr-dev-controls').classList.toggle('hidden', !state.editMode);
+  document.getElementById('itr-save-sql-btn').classList.toggle('hidden', !state.editMode);
+  if (state.editMode) {
+    document.getElementById('itr-edit-status').value = r.status;
+    document.getElementById('itr-edit-priority').value = r.priority;
+    document.getElementById('itr-edit-assignee').value = r.assignee || '';
+    document.getElementById('itr-edit-note').value = r.note || '';
+  }
+
+  showItSampleData();
+  const modal = document.getElementById('it-report-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeItReportModal() {
+  const modal = document.getElementById('it-report-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  state.currentItReport = null;
+}
+
+function renderItResultTable(columns, rows, labelText) {
+  state.currentItResult = { columns, rows };
+  document.getElementById('itr-result-label').textContent = labelText;
+  const thead = document.getElementById('itr-result-thead');
+  const tbody = document.getElementById('itr-result-tbody');
+
+  thead.innerHTML = `<tr>${columns.map((c) => `<th class="px-3 py-2 font-semibold whitespace-nowrap">${escapeHtml(c)}</th>`).join('')}</tr>`;
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${columns.length}" class="px-3 py-6 text-center text-slate-400">ไม่พบข้อมูลในช่วงวันที่ที่เลือก</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows
+    .map((row) => {
+      const cells = Array.isArray(row) ? row : columns.map((c) => row[c]);
+      return `<tr class="hover:bg-slate-50">${cells.map((v) => `<td class="px-3 py-2 whitespace-nowrap text-slate-700">${escapeHtml(v ?? '')}</td>`).join('')}</tr>`;
+    })
+    .join('');
+}
+
+function showItSampleData() {
+  const r = state.currentItReport;
+  if (!r) return;
+  renderItResultTable(
+    r.sampleColumns || ['ข้อมูล'],
+    r.sampleRows || [],
+    `ตัวอย่างโครงสร้างรายงาน (${(r.sampleRows || []).length} แถว) — ตั้งค่า HOSxP เพื่อดึงข้อมูลจริง`
+  );
+}
+
+async function runItReportQuery() {
+  const r = state.currentItReport;
+  if (!r) return;
+  const sqlQuery = document.getElementById('itr-sql').value;
+  const startDate = document.getElementById('itr-start-date').value;
+  const endDate = document.getElementById('itr-end-date').value;
+  try {
+    showToast('กำลังดึงข้อมูลจาก HOSxP...');
+    const res = await api(`/api/it-reports/${r.id}/run`, {
+      method: 'POST',
+      body: JSON.stringify({ sqlQuery, startDate, endDate })
+    });
+    renderItResultTable(res.columns, res.rows, `ผลลัพธ์จริงจาก HOSxP (${res.totalRows} แถว, แสดงสูงสุด 500 แถว)`);
+    showToast(`ดึงข้อมูลสำเร็จ ${res.totalRows} แถว`);
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+function copyItSql() {
+  const sql = document.getElementById('itr-sql').value;
+  navigator.clipboard.writeText(sql).then(() => showToast('คัดลอกคำสั่ง SQL แล้ว'));
+}
+
+async function saveItReportMeta() {
+  const r = state.currentItReport;
+  if (!r) return;
+  const payload = {
+    sqlQuery: document.getElementById('itr-sql').value,
+    status: document.getElementById('itr-edit-status').value,
+    priority: document.getElementById('itr-edit-priority').value,
+    assignee: document.getElementById('itr-edit-assignee').value,
+    note: document.getElementById('itr-edit-note').value
+  };
+  try {
+    await api(`/api/it-reports/${r.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    await loadAll();
+    showToast('บันทึกข้อมูลรายงาน IT เรียบร้อย');
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+function exportItReportCsv() {
+  const { columns, rows } = state.currentItResult;
+  if (!columns || columns.length === 0) return showToast('ไม่มีข้อมูลสำหรับ Export', true);
+  const matrix = [columns];
+  for (const row of rows) {
+    matrix.push(Array.isArray(row) ? row : columns.map((c) => row[c]));
+  }
+  const code = state.currentItReport ? state.currentItReport.id : 'report';
+  downloadCsv(`${code}.csv`, matrix);
+}
+
+// ==================== HOSXP CONFIG MODAL ====================
+function openHosxpConfigModal() {
+  const cfg = state.hosxpConfig || {};
+  document.getElementById('hosxp-host').value = cfg.host || '127.0.0.1';
+  document.getElementById('hosxp-port').value = cfg.port || 3306;
+  document.getElementById('hosxp-db').value = cfg.database || 'hos';
+  document.getElementById('hosxp-user').value = cfg.user || '';
+  document.getElementById('hosxp-pass').value = '';
+  document.getElementById('hosxp-test-result').classList.add('hidden');
+  const modal = document.getElementById('hosxp-config-modal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeHosxpConfigModal() {
+  const modal = document.getElementById('hosxp-config-modal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+async function saveHosxpConn() {
+  const payload = {
+    host: document.getElementById('hosxp-host').value.trim(),
+    port: Number(document.getElementById('hosxp-port').value || 3306),
+    database: document.getElementById('hosxp-db').value.trim(),
+    user: document.getElementById('hosxp-user').value.trim(),
+    password: document.getElementById('hosxp-pass').value
+  };
+  try {
+    state.hosxpConfig = await api('/api/hosxp/config', { method: 'PUT', body: JSON.stringify(payload) });
+    renderItMonitor();
+    closeHosxpConfigModal();
+    showToast('บันทึกการตั้งค่า HOSxP เรียบร้อย');
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function testHosxpConn() {
+  const box = document.getElementById('hosxp-test-result');
+  const payload = {
+    host: document.getElementById('hosxp-host').value.trim(),
+    port: Number(document.getElementById('hosxp-port').value || 3306),
+    database: document.getElementById('hosxp-db').value.trim(),
+    user: document.getElementById('hosxp-user').value.trim(),
+    password: document.getElementById('hosxp-pass').value
+  };
+  try {
+    state.hosxpConfig = await api('/api/hosxp/config', { method: 'PUT', body: JSON.stringify(payload) });
+    const res = await api('/api/hosxp/test', { method: 'POST' });
+    box.className = 'p-2.5 rounded-xl text-xs bg-emerald-50 text-emerald-800 border border-emerald-200';
+    box.textContent = `เชื่อมต่อสำเร็จ! MySQL ${res.info.version} (DB: ${res.info.db})`;
+    box.classList.remove('hidden');
+  } catch (err) {
+    box.className = 'p-2.5 rounded-xl text-xs bg-rose-50 text-rose-800 border border-rose-200';
+    box.textContent = `เชื่อมต่อไม่สำเร็จ: ${err.message}`;
+    box.classList.remove('hidden');
   }
 }
 
@@ -736,6 +976,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('filter-type').addEventListener('change', renderPlansTable);
   document.getElementById('ppfs-q').addEventListener('input', renderPpfsTable);
   document.getElementById('ppfs-category').addEventListener('change', renderPpfsTable);
+  document.getElementById('it-filter-q').addEventListener('input', renderItMonitor);
+  document.getElementById('it-filter-dept').addEventListener('change', renderItMonitor);
   document.getElementById('it-filter-status').addEventListener('change', renderItMonitor);
+  document.getElementById('it-filter-priority').addEventListener('change', renderItMonitor);
   loadAll();
 });
