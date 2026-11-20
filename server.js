@@ -418,6 +418,124 @@ app.post('/api/hosxp/sync-dashboard', async (req, res) => {
     );
     applyMonthlyRows('anc-10', anc10, 'Triferdine');
 
+    // 9. คัดกรองสุขภาพสตรี (women-01, women-02)
+    const [wom01] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 80 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010876'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('women-01', wom01, 'Ferrofolic');
+
+    const [wom02] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 50 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN ('3010993','3010794','3010795','3010796','3010797','3010798','3010799','3010685')
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('women-02', wom02, 'HPV DNA');
+
+    // 10. วางแผนครอบครัว (fp-01..fp-03)
+    const [fp01] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 40 AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010952' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('fp-01', fp01, 'ยาเม็ดฮอร์โมนรวม');
+
+    const [fp02] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 80 AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010951' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('fp-02', fp02, 'ยาเม็ดฮอร์โมนเดี่ยว');
+
+    const [fp03] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 60 AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010953' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('fp-03', fp03, 'ยาฉีดคุมกำเนิด');
+
+    // 11. อนามัยวัยทำงาน (work-01..work-04)
+    const [wrk01] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 40 AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010873' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('work-01', wrk01, 'FPG 35-59 ปี');
+
+    const [wrk02] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 160 AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010874' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('work-02', wrk02, 'HDL 45-70 ปี');
+
+    const [wrk03] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010908' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('work-03', wrk03, 'Telemedicine');
+
+    const [wrk04] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 60 AS amt
+       FROM opitemrece op WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010878' GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('work-04', wrk04, 'FIT Test');
+
+    // 12. ER พ.ร.บ. (er-02) และ ER นอกจังหวัด (er-03)
+    const [er02] = await conn.query(
+      `SELECT DATE_FORMAT(e.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT e.vn) AS cnt, COALESCE(SUM(v.income),0) AS amt
+       FROM er_regist e
+       JOIN ovst o ON o.vn = e.vn
+       JOIN pttype pt ON pt.pttype = o.pttype
+       JOIN vn_stat v ON v.vn = e.vn
+       WHERE e.vstdate BETWEEN ? AND ? AND (pt.pcode = 'A9' OR pt.name LIKE '%พรบ%')
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('er-02', er02, 'ER พ.ร.บ.');
+
+    const [er03] = await conn.query(
+      `SELECT DATE_FORMAT(e.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT e.vn) AS cnt, COALESCE(SUM(v.income),0) AS amt
+       FROM er_regist e
+       JOIN ovst o ON o.vn = e.vn
+       JOIN pttype pt ON pt.pttype = o.pttype
+       JOIN vn_stat v ON v.vn = e.vn
+       WHERE e.vstdate BETWEEN ? AND ? AND pt.name LIKE '%นอกเขตฉุกเฉินต่างจังหวัด%'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('er-03', er03, 'ER นอกจังหวัด');
+
+    // 13. ห้องคลอดนอกเขต (lr-02) และ ประกันสังคม (lr-03)
+    const [lr02] = await conn.query(
+      `SELECT DATE_FORMAT(i.dchdate,'%Y-%m') AS ym, COUNT(*) AS cnt, COALESCE(SUM(a.income),0) AS amt
+       FROM ipt i
+       JOIN an_stat a ON a.an = i.an
+       JOIN pttype pt ON pt.pttype = i.pttype
+       WHERE i.ward = '02' AND i.dchdate BETWEEN ? AND ? AND pt.name LIKE '%นอกเขต%'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('lr-02', lr02, 'คลอดนอกเขต');
+
+    const [lr03] = await conn.query(
+      `SELECT DATE_FORMAT(i.dchdate,'%Y-%m') AS ym, COUNT(*) AS cnt, COALESCE(SUM(a.income),0) AS amt
+       FROM ipt i
+       JOIN an_stat a ON a.an = i.an
+       JOIN pttype pt ON pt.pttype = i.pttype
+       WHERE i.ward = '02' AND i.dchdate BETWEEN ? AND ? AND pt.pcode = 'A7'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('lr-03', lr03, 'คลอด ปกส.');
+
     res.json({
       ok: true,
       syncedItems,
