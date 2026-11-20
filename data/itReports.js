@@ -15,16 +15,16 @@ const IT_REPORTS = [
     status: 'pending',
     assignee: 'ทีม IT',
     sqlQuery: `SELECT o.vstdate, o.vn, p.hn, CONCAT(p.pname,p.fname,' ',p.lname) AS ptname,
-  o.pttype, pt.name AS pttype_name, od.icd10, op.icode, n.name AS item_name, op.qty, op.sum_price
+  o.pttype, pt.name AS pttype_name, n.billcode, n.name AS item_name, op.qty, op.sum_price
 FROM ovst o
 JOIN patient p ON p.hn = o.hn
 JOIN pttype pt ON pt.pttype = o.pttype
-LEFT JOIN ovstdiag od ON od.vn = o.vn AND od.icd10 LIKE 'M729%'
-LEFT JOIN opitemrece op ON op.vn = o.vn
-LEFT JOIN nondrugitems n ON n.icode = op.icode
+JOIN opitemrece op ON op.vn = o.vn AND op.vstdate BETWEEN :start_date AND :end_date
+JOIN nondrugitems n ON n.icode = op.icode
 WHERE o.vstdate BETWEEN :start_date AND :end_date
-  AND (od.icd10 LIKE 'M729%' OR n.billcode = '8610' OR n.name LIKE '%8610%')
-ORDER BY o.vstdate DESC;`,
+  AND (n.billcode = '8610' OR n.name LIKE '%8610%' OR n.name LIKE '%พยุงส้นเท้า%')
+ORDER BY o.vstdate DESC
+LIMIT 300;`,
     sampleColumns: ['วันที่รับบริการ', 'HN', 'สิทธิ', 'ICD-10', 'รายการ', 'จำนวน', 'มูลค่า(บาท)'],
     sampleRows: [
       ['2569-10-15', '0012345', 'จ่ายตรง (CSCD)', 'M7297', '8610 อุปกรณ์พยุงส้นเท้าฯ', 1, 7240],
@@ -99,14 +99,15 @@ ORDER BY sum_amount DESC;`,
     priority: 'high',
     status: 'pending',
     assignee: 'ทีม IT',
-    sqlQuery: `SELECT a.person_anc_id, p.hn, CONCAT(p.pname,p.fname,' ',p.lname) AS ptname,
-  a.lmp, a.edc, a.preg_no, s.anc_service_date, s.anc_service_number, s.next_appointment_date
+    sqlQuery: `SELECT a.person_anc_id, ps.patient_hn AS hn, CONCAT(ps.pname,ps.fname,' ',ps.lname) AS ptname,
+  a.lmp, a.edc, a.preg_no, s.anc_service_date, s.anc_service_number, s.pa_week, s.pass_quality
 FROM person_anc a
 JOIN person ps ON ps.person_id = a.person_id
-JOIN patient p ON p.cid = ps.cid
 LEFT JOIN person_anc_service s ON s.person_anc_id = a.person_anc_id
-WHERE a.discharge <> 'Y' OR a.discharge IS NULL
-ORDER BY s.next_appointment_date ASC;`,
+WHERE (a.discharge <> 'Y' OR a.discharge IS NULL)
+  AND s.anc_service_date BETWEEN :start_date AND :end_date
+ORDER BY s.anc_service_date DESC
+LIMIT 300;`,
     sampleColumns: ['HN', 'ชื่อ-สกุล', 'EDC', 'ครั้งที่ ANC', 'นัดครั้งถัดไป', 'สถานะ'],
     sampleRows: [
       ['0041122', 'นางสาว ก.', '2570-02-14', 4, '2569-11-25', 'ตามนัด'],
@@ -151,7 +152,7 @@ ORDER BY v.village_name, age;`,
     priority: 'high',
     status: 'pending',
     assignee: 'ทีม IT',
-    sqlQuery: `SELECT p.person_id, p.hn, CONCAT(p.pname,p.fname,' ',p.lname) AS fullname,
+    sqlQuery: `SELECT p.person_id, p.patient_hn AS hn, CONCAT(p.pname,p.fname,' ',p.lname) AS fullname,
   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age
 FROM person p
 WHERE p.death <> 'Y'
@@ -177,13 +178,15 @@ LIMIT 500;`,
     status: 'pending',
     assignee: 'ทีม IT',
     sqlQuery: `SELECT p.person_id, CONCAT(p.pname,p.fname,' ',p.lname) AS child_name, p.birthdate,
-  w.vaccine_name, e.vaccine_date, e.hospcode
+  w.epi_vaccine_name, e.vaccine_date
 FROM person p
 JOIN person_epi pe ON pe.person_id = p.person_id
-LEFT JOIN person_epi_vaccine e ON e.person_epi_id = pe.person_epi_id
-LEFT JOIN epi_vaccine w ON w.epi_vaccine_id = e.epi_vaccine_id
+JOIN person_epi_vaccine e ON e.person_epi_id = pe.person_epi_id
+JOIN epi_vaccine w ON w.epi_vaccine_id = e.epi_vaccine_id
 WHERE p.death <> 'Y' AND TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) <= 5
-ORDER BY p.birthdate DESC;`,
+  AND e.vaccine_date BETWEEN :start_date AND :end_date
+ORDER BY e.vaccine_date DESC
+LIMIT 300;`,
     sampleColumns: ['ชื่อเด็ก', 'วันเกิด', 'วัคซีน/เข็ม', 'วันที่รับ', 'หน่วยบริการ'],
     sampleRows: [
       ['ด.ช. ตัวอย่าง', '2568-05-10', 'DTP-HB-Hib 3', '2568-11-12', 'รพ.โคกศรีสุพรรณ']
@@ -202,11 +205,12 @@ ORDER BY p.birthdate DESC;`,
     priority: 'high',
     status: 'pending',
     assignee: 'ทีม IT',
-    sqlQuery: `SELECT i.an, i.hn, i.regdate, i.dchdate, pt.name AS pttype_name, i.adjrw,
-  IF(i.chart_doctor IS NULL OR i.chart_doctor='', 'ยังไม่สรุป', 'สรุปแล้ว') AS chart_status
+    sqlQuery: `SELECT i.an, i.hn, i.regdate, i.dchdate, w.name AS ward_name, pt.name AS pttype_name, i.adjrw,
+  IF(i.chart_state IS NULL OR i.chart_state<>'Y', 'ยังไม่สรุป', 'สรุปแล้ว') AS chart_status
 FROM ipt i
+JOIN ward w ON w.ward = i.ward
 JOIN pttype pt ON pt.pttype = i.pttype
-WHERE i.ward = '03' -- ปรับรหัสหอห้องคลอดตามจริง
+WHERE (w.is_maternity_ward = 'Y' OR w.name LIKE '%คลอด%')
   AND i.dchdate BETWEEN :start_date AND :end_date
 ORDER BY i.dchdate DESC;`,
     sampleColumns: ['เดือน', 'สิทธิ', 'จำนวนคลอด', 'Adj.RW เฉลี่ย', 'Authen ไม่สมบูรณ์'],
@@ -333,7 +337,7 @@ ORDER BY e.vstdate DESC;`,
 FROM ipt i
 LEFT JOIN doctor d ON d.code = i.dch_doctor
 LEFT JOIN ward w ON w.ward = i.ward
-WHERE i.dchdate IS NOT NULL
+WHERE i.dchdate BETWEEN :start_date AND :end_date
   AND (i.chart_state IS NULL OR i.chart_state <> 'Y')
   AND DATEDIFF(CURDATE(), i.dchdate) > 7
 ORDER BY overdue_days DESC;`,
