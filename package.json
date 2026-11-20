@@ -1,0 +1,21 @@
+{
+  "name": "ksp-action-plan",
+  "version": "1.0.0",
+  "description": "ระบบบริหารจัดการและติดตามแผนปฏิบัติการเพิ่มรายได้-ลดรายจ่าย (Action Plan ปีงบประมาณ 2570) โรงพยาบาลโคกศรีสุพรรณ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "hospital",
+    "action-plan",
+    "dashboard",
+    "khok-si-suphan"
+  ],
+  "author": "Khok Si Suphan Hospital IT",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

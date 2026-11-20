@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Action Plan ปีงบประมาณ 2570 | โรงพยาบาลโคกศรีสุพรรณ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Executive Header -->
+  <header class="glass-header text-white shadow-lg no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shadow-inner shrink-0">
+            <svg class="w-7 h-7 text-emerald-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2h-3.5l-1-1h-5l-1 1H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="text-xl sm:text-2xl font-bold tracking-tight">ระบบติดตาม Action Plan ปีงบประมาณ 2570</h1>
+              <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-400/20 text-emerald-200 border border-emerald-300/30">
+                FY 2570
+              </span>
+            </div>
+            <p class="text-sm text-slate-200 mt-0.5">
+              โรงพยาบาลโคกศรีสุพรรณ อำเภอโคกศรีสุพรรณ จังหวัดสกลนคร · แผนปฏิบัติการเพิ่มรายได้และลดรายจ่าย
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <button id="btn-edit-mode" onclick="toggleEditMode()"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/20 transition cursor-pointer">
+            <span id="edit-mode-dot" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+            <span id="edit-mode-label">โหมดดูข้อมูล</span>
+          </button>
+          <button onclick="window.print()"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 border border-white/20 transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            พิมพ์รายงาน
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white text-slate-700 border-b border-slate-200 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav class="flex overflow-x-auto -mb-px gap-1" aria-label="Tabs">
+          <button onclick="switchTab('dashboard')" data-tab="dashboard" class="tab-btn active whitespace-nowrap px-4 py-3 text-sm flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            ภาพรวมผู้บริหาร
+          </button>
+          <button onclick="switchTab('plans')" data-tab="plans" class="tab-btn whitespace-nowrap px-4 py-3 text-sm flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            แผนปฏิบัติการ (Action Plan)
+          </button>
+          <button onclick="switchTab('ppfs')" data-tab="ppfs" class="tab-btn whitespace-nowrap px-4 py-3 text-sm flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            PPFS 54 รายการ
+          </button>
+          <button onclick="switchTab('it')" data-tab="it" class="tab-btn whitespace-nowrap px-4 py-3 text-sm flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            IT Dashboard Monitor
+          </button>
+          <button onclick="switchTab('roadmap')" data-tab="roadmap" class="tab-btn whitespace-nowrap px-4 py-3 text-sm flex items-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            Roadmap & วิเคราะห์สถานการณ์
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==================== TAB 1: DASHBOARD ==================== -->
+    <section id="tab-dashboard" class="space-y-6">
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 card-hover">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">เป้าหมายเพิ่มรายได้ (ปี 2570)</span>
+            <span class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+          </div>
+          <div id="kpi-expected-rev" class="text-2xl font-bold text-slate-900 mt-2 tabular-nums">-</div>
+          <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+            <span>ผลจริงสะสม: <strong id="kpi-actual-rev" class="text-teal-700">0</strong></span>
+            <span id="kpi-rev-pct" class="font-semibold text-teal-600">0%</span>
+          </div>
+          <div class="w-full h-2 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+            <div id="kpi-rev-bar" class="h-full bg-teal-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 card-hover">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">เป้าหมายลดรายจ่าย (ปี 2570)</span>
+            <span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+            </span>
+          </div>
+          <div id="kpi-expected-cost" class="text-2xl font-bold text-slate-900 mt-2 tabular-nums">-</div>
+          <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
+            <span>ลดได้จริงสะสม: <strong id="kpi-actual-cost" class="text-emerald-700">0</strong></span>
+            <span id="kpi-cost-pct" class="font-semibold text-emerald-600">0%</span>
+          </div>
+          <div class="w-full h-2 bg-slate-100 rounded-full mt-1.5 overflow-hidden">
+            <div id="kpi-cost-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 card-hover">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">กิจกรรมในแผนทั้งหมด</span>
+            <span class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </span>
+          </div>
+          <div id="kpi-total-items" class="text-2xl font-bold text-slate-900 mt-2 tabular-nums">-</div>
+          <div class="mt-2 text-xs text-slate-500 flex items-center justify-between">
+            <span>11 กลุ่มงาน + 54 รายการ PPFS</span>
+            <span id="kpi-completed-items" class="font-semibold text-sky-600">สำเร็จ 0</span>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 card-hover">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium text-slate-500">รายงาน IT Dashboard Monitor</span>
+            <span class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+            </span>
+          </div>
+          <div id="kpi-it-ready" class="text-2xl font-bold text-slate-900 mt-2 tabular-nums">-</div>
+          <div class="mt-2 text-xs text-slate-500 flex items-center gap-2">
+            <span id="kpi-it-progress" class="text-amber-600 font-medium">กำลังพัฒนา 0</span>
+            <span>·</span>
+            <span id="kpi-it-pending" class="text-slate-500">รอทำ 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-7 bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-800">รายได้คาดการณ์และผลลดรายจ่าย แยกตามกลุ่มงาน</h2>
+              <p class="text-xs text-slate-500">เปรียบเทียบเป้าหมายทั้งปี (บาท) กับผลงานจริงสะสม</p>
+            </div>
+          </div>
+          <div class="h-72">
+            <canvas id="deptChart"></canvas>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-800">แนวโน้มผลงานรายเดือน ปีงบ 2570</h2>
+              <p class="text-xs text-slate-500">ต.ค. 2569 – ก.ย. 2570 (บาท)</p>
+            </div>
+          </div>
+          <div class="h-72">
+            <canvas id="monthlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Department Breakdown Cards -->
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-bold text-slate-800">สรุปแผนรายกลุ่มงาน (คลิกเพื่อดูรายละเอียดกิจกรรม)</h2>
+        </div>
+        <div id="dept-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: ACTION PLANS ==================== -->
+    <section id="tab-plans" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 no-print">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 items-end">
+          <div class="lg:col-span-4">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหากิจกรรม / ตัวชี้วัด / ผู้รับผิดชอบ / IT</label>
+            <input id="filter-q" type="text" placeholder="พิมพ์คำค้นหา เช่น กายภาพ, ABI, IPD, Recormon..."
+              class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+          </div>
+          <div class="lg:col-span-3">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">กลุ่มงาน</label>
+            <select id="filter-dept" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="all">ทุกกลุ่มงาน</option>
+            </select>
+          </div>
+          <div class="lg:col-span-2">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ประเภทแผน</label>
+            <select id="filter-type" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+              <option value="all">ทั้งหมด</option>
+              <option value="revenue">เพิ่มรายได้</option>
+              <option value="cost_reduction">ลดรายจ่าย</option>
+              <option value="quality">พัฒนาคุณภาพ/ควบคุมต้นทุน</option>
+            </select>
+          </div>
+          <div class="lg:col-span-3 flex gap-2 justify-end">
+            <button onclick="exportPlansCsv()"
+              class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium flex items-center gap-1.5 cursor-pointer">
+              <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Export CSV
+            </button>
+            <button id="btn-add-item" onclick="openCreateModal()"
+              class="hidden px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium flex items-center gap-1.5 cursor-pointer">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              เพิ่มกิจกรรม
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <span id="plans-count-label" class="text-sm font-semibold text-slate-700">รายการกิจกรรมทั้งหมด</span>
+          <span class="text-xs text-slate-500">คลิกที่แถวเพื่อดูรายละเอียดและบันทึกผลงานรายเดือน</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3 font-semibold">กลุ่มงาน / กิจกรรมหลัก</th>
+                <th class="px-4 py-3 font-semibold">เป้าหมายปี 2570</th>
+                <th class="px-4 py-3 font-semibold text-right">มูลค่าคาดการณ์</th>
+                <th class="px-4 py-3 font-semibold text-right">ผลจริงสะสม</th>
+                <th class="px-4 py-3 font-semibold">IT Monitor</th>
+                <th class="px-4 py-3 font-semibold">ผู้รับผิดชอบ</th>
+              </tr>
+            </thead>
+            <tbody id="plans-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: PPFS 54 รายการ ==================== -->
+    <section id="tab-ppfs" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 no-print">
+        <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end justify-between">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหารายการ PPFS / รหัส ADP / ช่องทางเบิก</label>
+              <input id="ppfs-q" type="text" placeholder="เช่น 30011, FDH, KTB, ฝากครรภ์, FIT..."
+                class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">หมวดหมู่บริการ</label>
+              <select id="ppfs-category" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="all">ทุกหมวดหมู่ (54 รายการ)</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="exportPpfsCsv()"
+            class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Export PPFS CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <span id="ppfs-count-label" class="text-sm font-semibold text-slate-700">รายการสิทธิประโยชน์ PPFS 54 รายการ</span>
+          <span class="text-xs text-slate-500">เปิดโหมดแก้ไขเพื่อปรับเป้าหมายหรือยอดบริการจริง</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left">
+            <thead class="bg-slate-50 text-slate-600 text-xs uppercase border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3 font-semibold">หมวด / รายการ PPFS</th>
+                <th class="px-4 py-3 font-semibold">อัตราจ่าย</th>
+                <th class="px-4 py-3 font-semibold">รหัส ADP</th>
+                <th class="px-4 py-3 font-semibold">เบิก / โอน</th>
+                <th class="px-4 py-3 font-semibold text-right">เป้าหมาย</th>
+                <th class="px-4 py-3 font-semibold text-right">ผลงานจริง</th>
+                <th class="px-4 py-3 font-semibold">ผู้รับผิดชอบ</th>
+              </tr>
+            </thead>
+            <tbody id="ppfs-tbody" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: IT DASHBOARD MONITOR ==================== -->
+    <section id="tab-it" class="hidden space-y-4">
+      <div class="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold">ศูนย์ติดตามความต้องการรายงาน IT (Dashboard Monitor Hub)</h2>
+            <p class="text-sm text-indigo-200 mt-0.5">
+              รวบรวมความต้องการดึงรายงานจาก HOSxP / FDH / E-Claim / STM / 43 แฟ้ม ของทุกกลุ่มงาน
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <select id="it-filter-status" class="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white text-sm focus:outline-none">
+              <option value="all" class="text-slate-900">ทุกสถานะ IT</option>
+              <option value="pending" class="text-slate-900">รอดำเนินการ</option>
+              <option value="in_progress" class="text-slate-900">กำลังพัฒนา</option>
+              <option value="ready" class="text-slate-900">พร้อมใช้งาน</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="it-cards-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- ==================== TAB 5: ROADMAP & INSIGHTS ==================== -->
+    <section id="tab-roadmap" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+        <h2 class="text-lg font-bold text-slate-800 mb-1">PDCA Roadmap งานอุบัติเหตุฉุกเฉินและนิติเวช (ER) ปีงบ 2570</h2>
+        <p class="text-xs text-slate-500 mb-4">เป้าหมายรายได้คาดการณ์ 2,050,000 บาท/ปี (ฐานผู้รับบริการ ER 33,460 ครั้ง, รายรับ 14.07 ล้านบาท)</p>
+        <div id="er-roadmap-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+        <h2 class="text-lg font-bold text-slate-800 mb-1">ลำดับการดำเนินงาน 30 / 60 / 90 วัน — งานผู้ป่วยใน (IPD)</h2>
+        <p class="text-xs text-slate-500 mb-4">หอผู้ป่วยสามัญ ชินโสภณพนิช · เป้าหมายกรณีฐาน 1,205,200 บาท/ปี (ช่วง 602,600 – 2,400,100 บาท)</p>
+        <div id="ipd-timeline-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+        <h2 class="text-lg font-bold text-slate-800 mb-1">ภาคผนวก ก. วิเคราะห์สถานการณ์งานผู้ป่วยใน (สิ่งที่ข้อมูลบอก)</h2>
+        <p class="text-xs text-slate-500 mb-4">ข้อมูลฐานจาก Business Plan ปีงบ 2570 และ Service Profile ปี 2569</p>
+        <div id="ipd-insights-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 no-print">
+    โรงพยาบาลโคกศรีสุพรรณ อำเภอโคกศรีสุพรรณ จังหวัดสกลนคร · ระบบติดตาม Action Plan ปีงบประมาณ 2570
+  </footer>
+
+  <!-- ==================== DETAIL & MONTHLY PROGRESS MODAL ==================== -->
+  <div id="item-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-start justify-between gap-4">
+        <div>
+          <span id="modal-dept-badge" class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-500/20 text-teal-200 border border-teal-400/30 mb-1"></span>
+          <h3 id="modal-title" class="text-lg font-bold leading-snug"></h3>
+        </div>
+        <button onclick="closeModal()" class="text-slate-300 hover:text-white p-1 cursor-pointer">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2">
+            <div class="text-xs font-semibold text-slate-500 uppercase">รายละเอียดกิจกรรม</div>
+            <p id="modal-detail" class="text-sm text-slate-700 whitespace-pre-line"></p>
+            <div class="pt-2 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
+              <div><span class="text-slate-500">เป้าหมาย:</span> <strong id="modal-target" class="text-slate-800"></strong></div>
+              <div><span class="text-slate-500">ผู้รับผิดชอบ:</span> <strong id="modal-owner" class="text-slate-800"></strong></div>
+            </div>
+          </div>
+
+          <div class="bg-teal-50/60 rounded-xl p-4 border border-teal-200/80 space-y-2">
+            <div class="text-xs font-semibold text-teal-700 uppercase">มูลค่าเป้าหมาย & ผลงานจริง</div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-xs text-slate-600">คาดการณ์ทั้งปี:</span>
+              <span id="modal-expected" class="text-lg font-bold text-slate-900 tabular-nums"></span>
+            </div>
+            <div class="flex items-baseline justify-between">
+              <span class="text-xs text-slate-600">ผลงานจริงสะสม:</span>
+              <span id="modal-actual" class="text-lg font-bold text-teal-700 tabular-nums"></span>
+            </div>
+            <p id="modal-formula" class="text-xs text-slate-600 pt-1 border-t border-teal-200/60"></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white rounded-xl p-4 border border-slate-200 space-y-1.5">
+            <div class="text-xs font-semibold text-slate-500 uppercase">ตัวชี้วัดผล (KPIs)</div>
+            <p id="modal-kpi" class="text-sm text-slate-700 whitespace-pre-line"></p>
+          </div>
+          <div class="bg-indigo-50/50 rounded-xl p-4 border border-indigo-200/80 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <div class="text-xs font-semibold text-indigo-700 uppercase">Dashboard Monitor (IT)</div>
+              <span id="modal-it-source" class="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium"></span>
+            </div>
+            <p id="modal-it" class="text-sm text-slate-700 whitespace-pre-line"></p>
+          </div>
+        </div>
+
+        <!-- Monthly Recording Table -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-bold text-slate-800">บันทึกผลการดำเนินงานรายเดือน (ปีงบประมาณ 2570)</h4>
+            <span id="modal-edit-hint" class="text-xs text-amber-600 font-medium">เปิด "โหมดแก้ไข" ด้านบนขวาเพื่อบันทึกหรือแก้ไขข้อมูล</span>
+          </div>
+          <div class="overflow-x-auto border border-slate-200 rounded-xl">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-50 text-slate-600 border-b border-slate-200">
+                <tr>
+                  <th class="px-3 py-2 font-semibold">เดือน</th>
+                  <th class="px-3 py-2 font-semibold text-right">จำนวนผลงานจริง</th>
+                  <th class="px-3 py-2 font-semibold text-right">มูลค่าจริง (บาท)</th>
+                  <th class="px-3 py-2 font-semibold">หมายเหตุ / ปัญหาอุปสรรค</th>
+                  <th class="px-3 py-2 font-semibold text-center edit-only-col hidden">บันทึก</th>
+                </tr>
+              </thead>
+              <tbody id="modal-monthly-tbody" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div class="flex gap-2 edit-only-actions hidden">
+          <button onclick="deleteCurrentItem()" class="px-3 py-1.5 rounded-lg text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 cursor-pointer">
+            ลบกิจกรรมนี้
+          </button>
+        </div>
+        <button onclick="closeModal()" class="ml-auto px-4 py-1.5 rounded-lg text-sm font-medium bg-slate-800 text-white hover:bg-slate-700 cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CREATE ITEM MODAL ==================== -->
+  <div id="create-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden">
+      <div class="px-6 py-4 bg-teal-700 text-white flex items-center justify-between">
+        <h3 class="text-base font-bold">เพิ่มกิจกรรมใหม่ใน Action Plan 2570</h3>
+        <button onclick="closeCreateModal()" class="text-teal-100 hover:text-white cursor-pointer">✕</button>
+      </div>
+      <form id="create-form" onsubmit="submitCreateItem(event)" class="p-6 space-y-3 text-sm">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">กลุ่มงาน *</label>
+            <select id="new-dept" required class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ประเภทแผน *</label>
+            <select id="new-type" required class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white">
+              <option value="revenue">เพิ่มรายได้</option>
+              <option value="cost_reduction">ลดรายจ่าย</option>
+              <option value="quality">พัฒนาคุณภาพ/ควบคุมต้นทุน</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อกิจกรรมหลัก (Key Activity) *</label>
+          <input id="new-title" type="text" required class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">รายละเอียด</label>
+          <textarea id="new-detail" rows="2" class="w-full px-3 py-2 rounded-xl border border-slate-300"></textarea>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">เป้าหมาย (จำนวน)</label>
+            <input id="new-target-count" type="number" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">หน่วยนับ</label>
+            <input id="new-target-unit" type="text" value="คน" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">มูลค่าคาดการณ์ (บาท)</label>
+            <input id="new-expected" type="number" step="0.01" value="0" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">ตัวชี้วัดผล (KPI)</label>
+            <input id="new-kpi" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">หัวหน้าผู้รับผิดชอบ</label>
+            <input id="new-owner" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Dashboard Monitor (สิ่งที่ให้ IT ดึงรายงาน)</label>
+          <input id="new-it" type="text" class="w-full px-3 py-2 rounded-xl border border-slate-300" />
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeCreateModal()" class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 cursor-pointer">ยกเลิก</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold cursor-pointer">บันทึกกิจกรรม</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm shadow-lg"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
