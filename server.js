@@ -237,42 +237,49 @@ app.post('/api/hosxp/sync-dashboard', async (req, res) => {
     applyMonthlyRows('pt-01', pt01, '8610');
 
     // 2. PT-02: กายอุปกรณ์และอุปกรณ์ช่วยเดิน
-    const [pt02] = await conn.query(
-      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
-       FROM opitemrece op
-       JOIN nondrugitems n ON n.icode = op.icode
-       WHERE op.vstdate BETWEEN ? AND ?
-         AND (n.name LIKE '%Pick-up-walker%' OR n.name LIKE '%Walker%' OR n.name LIKE '%Knee support%'
-           OR n.name LIKE '%Tripod%' OR n.name LIKE '%Single Cane%' OR n.name LIKE '%Crutch%' OR n.name LIKE '%Wheelchair%')
-       GROUP BY ym`,
-      [startDate, endDate]
+    const [pt02Codes] = await conn.query(
+      `SELECT icode FROM nondrugitems
+       WHERE name LIKE '%Pick-up-walker%' OR name LIKE '%Walker%' OR name LIKE '%Knee support%'
+          OR name LIKE '%Tripod%' OR name LIKE '%Single Cane%' OR name LIKE '%Crutch%' OR name LIKE '%Wheelchair%'`
     );
-    applyMonthlyRows('pt-02', pt02, 'กายอุปกรณ์');
+    const pt02Icodes = pt02Codes.map((x) => x.icode);
+    if (pt02Icodes.length > 0) {
+      const [pt02] = await conn.query(
+        `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
+         FROM opitemrece op
+         WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN (?)
+         GROUP BY ym`,
+        [startDate, endDate, pt02Icodes]
+      );
+      applyMonthlyRows('pt-02', pt02, 'กายอุปกรณ์');
+    }
 
     // 3. PT-04 & PT-06: กายภาพบำบัดแยกสิทธิ (income = '14')
-    const [ptUc] = await conn.query(
-      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
-       FROM opitemrece op
-       JOIN ovst o ON o.vn = op.vn
-       JOIN pttype pt ON pt.pttype = o.pttype
-       JOIN nondrugitems n ON n.icode = op.icode
-       WHERE op.vstdate BETWEEN ? AND ? AND n.income = '14' AND pt.pcode = 'UC'
-       GROUP BY ym`,
-      [startDate, endDate]
-    );
-    applyMonthlyRows('pt-04', ptUc, 'กายภาพ UC');
+    const [pt14Codes] = await conn.query(`SELECT icode FROM nondrugitems WHERE income = '14'`);
+    const pt14Icodes = pt14Codes.map((x) => x.icode);
+    if (pt14Icodes.length > 0) {
+      const [ptUc] = await conn.query(
+        `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
+         FROM opitemrece op
+         JOIN ovst o ON o.vn = op.vn
+         JOIN pttype pt ON pt.pttype = o.pttype
+         WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN (?) AND pt.pcode = 'UC'
+         GROUP BY ym`,
+        [startDate, endDate, pt14Icodes]
+      );
+      applyMonthlyRows('pt-04', ptUc, 'กายภาพ UC');
 
-    const [ptCscd] = await conn.query(
-      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
-       FROM opitemrece op
-       JOIN ovst o ON o.vn = op.vn
-       JOIN pttype pt ON pt.pttype = o.pttype
-       JOIN nondrugitems n ON n.icode = op.icode
-       WHERE op.vstdate BETWEEN ? AND ? AND n.income = '14' AND pt.pcode IN ('A2','A7','A8','A9')
-       GROUP BY ym`,
-      [startDate, endDate]
-    );
-    applyMonthlyRows('pt-06', ptCscd, 'กายภาพ CSCD/อปท.');
+      const [ptCscd] = await conn.query(
+        `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COALESCE(SUM(op.sum_price),0) AS amt
+         FROM opitemrece op
+         JOIN ovst o ON o.vn = op.vn
+         JOIN pttype pt ON pt.pttype = o.pttype
+         WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN (?) AND pt.pcode IN ('A2','A7','A8','A9')
+         GROUP BY ym`,
+        [startDate, endDate, pt14Icodes]
+      );
+      applyMonthlyRows('pt-06', ptCscd, 'กายภาพ CSCD/อปท.');
+    }
 
     // 4. LR-01: ตึกคลอด (ward '02')
     const [lr01] = await conn.query(
