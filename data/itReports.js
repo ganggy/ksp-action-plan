@@ -129,12 +129,14 @@ LIMIT 300;`,
   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age, v.village_name
 FROM person p
 JOIN village v ON v.village_id = p.village_id
-WHERE p.sex = '2' AND p.death <> 'Y'
+WHERE (p.death <> 'Y' OR p.death IS NULL)
+  AND p.sex = '2'
   AND TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) BETWEEN 30 AND 60
   AND p.person_id NOT IN (
     SELECT DISTINCT person_id FROM person_women_service WHERE service_date >= DATE_SUB(CURDATE(), INTERVAL 5 YEAR)
   )
-ORDER BY v.village_name, age;`,
+ORDER BY v.village_name, age
+LIMIT 300;`,
     sampleColumns: ['หมู่บ้าน', 'จำนวนกลุ่มเป้าหมาย', 'ตรวจแล้ว', 'คงเหลือยังไม่ตรวจ'],
     sampleRows: [
       ['ม.1 บ้านโคกศรีสุพรรณ', 140, 92, 48],
@@ -155,7 +157,7 @@ ORDER BY v.village_name, age;`,
     sqlQuery: `SELECT p.person_id, p.patient_hn AS hn, CONCAT(p.pname,p.fname,' ',p.lname) AS fullname,
   TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) AS age
 FROM person p
-WHERE p.death <> 'Y'
+WHERE (p.death <> 'Y' OR p.death IS NULL)
   AND TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) BETWEEN 45 AND 70
   AND p.person_id NOT IN (SELECT person_id FROM clinicmember WHERE clinic IN ('001','002'))
 LIMIT 500;`,
@@ -207,7 +209,7 @@ LIMIT 300;`,
     status: 'pending',
     assignee: 'ทีม IT',
     sqlQuery: `SELECT i.an, i.hn, i.regdate, i.dchdate, w.name AS ward_name, pt.name AS pttype_name, i.adjrw,
-  IF(i.chart_state IS NULL OR i.chart_state<>'Y', 'ยังไม่สรุป', 'สรุปแล้ว') AS chart_status
+  IF(COALESCE(i.chart_state,'')='Y', _utf8mb4'สรุปแล้ว', _utf8mb4'ยังไม่สรุป') AS chart_status
 FROM ipt i
 JOIN ward w ON w.ward = i.ward
 JOIN pttype pt ON pt.pttype = i.pttype
@@ -285,12 +287,13 @@ ORDER BY e.vstdate DESC;`,
 FROM er_regist e
 JOIN ovst o ON o.vn = e.vn
 JOIN pttype pt ON pt.pttype = o.pttype
-JOIN opitemrece op ON op.vn = e.vn
+JOIN opitemrece op ON op.vn = e.vn AND op.vstdate BETWEEN :start_date AND :end_date
 JOIN nondrugitems n ON n.icode = op.icode
 WHERE e.vstdate BETWEEN :start_date AND :end_date
   AND (n.name LIKE '%EKG%' OR n.name LIKE '%Ultrasound%' OR n.name LIKE '%Echo%' OR n.name LIKE '%เย็บ%' OR n.name LIKE '%ทำแผล%')
 GROUP BY o.vstdate, pt.name, n.name
-ORDER BY o.vstdate DESC;`,
+ORDER BY o.vstdate DESC
+LIMIT 300;`,
     sampleColumns: ['รายการตรวจ/หัตถการ', 'สิทธิ', 'จำนวนครั้ง', 'มูลค่า(บาท)'],
     sampleRows: [
       ['EKG', 'จ่ายตรง (CSCD)', 18, 3600],

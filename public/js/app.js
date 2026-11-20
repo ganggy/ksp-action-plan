@@ -95,6 +95,27 @@ function switchTab(tabName) {
 }
 
 // ==================== LOAD DATA ====================
+async function syncDashboardFromHosxp() {
+  const btn = document.getElementById('btn-sync-hosxp');
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'กำลังซิงค์ข้อมูลจาก HOSxP...';
+  }
+  try {
+    const res = await api('/api/hosxp/sync-dashboard', { method: 'POST' });
+    await loadAll();
+    showToast(`ซิงค์ยอดจริงจาก HOSxP สำเร็จ (${res.syncedItems.length} กิจกรรม)`);
+  } catch (err) {
+    showToast('ซิงค์ไม่สำเร็จ: ' + err.message, true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+    }
+  }
+}
+
 async function loadAll() {
   try {
     const [dashboard, itemsRes, ppfsRes, roadmapRes, itRes, hosxpCfg] = await Promise.all([

@@ -182,8 +182,13 @@
 
       <!-- Department Breakdown Cards -->
       <div>
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <h2 class="text-lg font-bold text-slate-800">สรุปแผนรายกลุ่มงาน (คลิกเพื่อดูรายละเอียดกิจกรรม)</h2>
+          <button id="btn-sync-hosxp" onclick="syncDashboardFromHosxp()"
+            class="no-print inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            ซิงค์ยอดจริงจาก HOSxP (ปีงบ 2570)
+          </button>
         </div>
         <div id="dept-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
