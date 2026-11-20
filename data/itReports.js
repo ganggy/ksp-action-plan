@@ -178,11 +178,12 @@ LIMIT 500;`,
     status: 'pending',
     assignee: 'ทีม IT',
     sqlQuery: `SELECT p.person_id, CONCAT(p.pname,p.fname,' ',p.lname) AS child_name, p.birthdate,
-  w.epi_vaccine_name, e.vaccine_date
+  w.epi_vaccine_name, e.vaccine_date, e.provider_hospcode
 FROM person p
 JOIN person_epi pe ON pe.person_id = p.person_id
 JOIN person_epi_vaccine e ON e.person_epi_id = pe.person_epi_id
-JOIN epi_vaccine w ON w.epi_vaccine_id = e.epi_vaccine_id
+JOIN person_epi_vaccine_list vl ON vl.person_epi_vaccine_id = e.person_epi_vaccine_id
+JOIN epi_vaccine w ON w.epi_vaccine_id = vl.epi_vaccine_id
 WHERE p.death <> 'Y' AND TIMESTAMPDIFF(YEAR, p.birthdate, CURDATE()) <= 5
   AND e.vaccine_date BETWEEN :start_date AND :end_date
 ORDER BY e.vaccine_date DESC
