@@ -345,6 +345,79 @@ app.post('/api/hosxp/sync-dashboard', async (req, res) => {
     );
     applyMonthlyRows('pharm-02', phm2, 'EPOTIV');
 
+    // 8. อนามัยแม่และเด็ก / ANC-PNC (anc-01..anc-10)
+    const [anc01] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 75 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN ('3010866','3010056','3000929')
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-01', anc01, 'UPT/PRT');
+
+    const [anc02] = await conn.query(
+      `SELECT DATE_FORMAT(anc_service_date,'%Y-%m') AS ym, COUNT(*) AS cnt, COUNT(*) * 360 AS amt
+       FROM person_anc_service
+       WHERE anc_service_date BETWEEN ? AND ?
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-02', anc02, 'ANC 1-8');
+
+    const [anc03] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 600 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN ('3010864','3010233')
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-03', anc03, 'Lab1 ANC');
+
+    const [anc04] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 190 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN ('3010865','3010234')
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-04', anc04, 'Lab2 ANC');
+
+    const [anc05] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 400 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode IN ('3010571','3000706')
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-05', anc05, 'US ANC');
+
+    const [anc07] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 100 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3001137'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-07', anc07, 'TPHA');
+
+    const [anc09] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 150 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '3010867'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-09', anc09, 'PNC 1-3');
+
+    const [anc10] = await conn.query(
+      `SELECT DATE_FORMAT(op.vstdate,'%Y-%m') AS ym, COUNT(DISTINCT op.vn) AS cnt, COUNT(DISTINCT op.vn) * 135 AS amt
+       FROM opitemrece op
+       WHERE op.vstdate BETWEEN ? AND ? AND op.icode = '1530019'
+       GROUP BY ym`,
+      [startDate, endDate]
+    );
+    applyMonthlyRows('anc-10', anc10, 'Triferdine');
+
     res.json({
       ok: true,
       syncedItems,
