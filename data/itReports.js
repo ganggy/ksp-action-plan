@@ -22,7 +22,7 @@ JOIN pttype pt ON pt.pttype = o.pttype
 JOIN opitemrece op ON op.vn = o.vn AND op.vstdate BETWEEN :start_date AND :end_date
 JOIN nondrugitems n ON n.icode = op.icode
 WHERE o.vstdate BETWEEN :start_date AND :end_date
-  AND (n.billcode = '8610' OR n.name LIKE '%8610%' OR n.name LIKE '%พยุงส้นเท้า%')
+  AND (op.icode IN ('3010607', '3010971') OR n.billcode = '8610' OR n.name LIKE '%8610%' OR n.name LIKE '%พยุงส้นเท้า%')
 ORDER BY o.vstdate DESC
 LIMIT 300;`,
     sampleColumns: ['วันที่รับบริการ', 'HN', 'สิทธิ', 'ICD-10', 'รายการ', 'จำนวน', 'มูลค่า(บาท)'],
@@ -211,7 +211,7 @@ LIMIT 300;`,
 FROM ipt i
 JOIN ward w ON w.ward = i.ward
 JOIN pttype pt ON pt.pttype = i.pttype
-WHERE (w.is_maternity_ward = 'Y' OR w.name LIKE '%คลอด%')
+WHERE i.ward = '02' -- 02 = ตึกคลอด
   AND i.dchdate BETWEEN :start_date AND :end_date
 ORDER BY i.dchdate DESC;`,
     sampleColumns: ['เดือน', 'สิทธิ', 'จำนวนคลอด', 'Adj.RW เฉลี่ย', 'Authen ไม่สมบูรณ์'],
@@ -386,7 +386,7 @@ ORDER BY ym DESC, sum_adjrw DESC;`,
 FROM ipt i
 JOIN an_stat a ON a.an = i.an
 JOIN pttype pt ON pt.pttype = i.pttype
-WHERE i.ward = '04' -- ปรับรหัสหอร่มโพธิ์ 3 ตามจริง
+WHERE i.ward = '03' -- 03 = ตึกร่มโพธิ์ 84 ปี ชั้น 3
   AND i.dchdate BETWEEN :start_date AND :end_date
 GROUP BY ym, pt.name;`,
     sampleColumns: ['เดือน', 'สิทธิ', 'Admit(ราย)', 'วันนอนรวม', 'รายได้(บาท)'],
@@ -481,7 +481,7 @@ ORDER BY i.regdate DESC;`,
 FROM opitemrece op
 JOIN drugitems d ON d.icode = op.icode
 WHERE op.vstdate BETWEEN :start_date AND :end_date
-  AND (d.name LIKE '%RECORMON%' OR d.name LIKE '%EPOTIV%' OR d.name LIKE '%EVOFLOW%' OR d.name LIKE '%ครีมไพร%')
+  AND (d.icode IN ('1670037','1690005','1490063') OR d.name LIKE '%RECORMON%' OR d.name LIKE '%EPOTIV%' OR d.name LIKE '%EVOFLOW%' OR d.name LIKE '%ไพล%' OR d.name LIKE '%ไพร%')
 GROUP BY d.icode, d.name
 ORDER BY total_qty DESC;`,
     sampleColumns: ['รายการยา', 'ราคาเป้าหมาย/หน่วย', 'ปริมาณใช้จริง', 'มูลค่าตามราคาเป้าหมาย(บาท)'],
